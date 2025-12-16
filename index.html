@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Parkinson's Risk Assessment</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Use Inter font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #121212; /* Black background */
+        }
+        
+        /* Custom styles for the drag-and-drop boxes */
+        .drop-zone {
+            border-style: dashed;
+            border-width: 2px;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            /* Base Colors */
+            border-color: #ef4444; /* Red border */
+            background-color: #1f1f1f; /* Off-black */
+        }
+        .drop-zone.drag-over {
+            border-color: #3b82f6; /* Blue border on drag over */
+            background-color: #2f2f2f;
+        }
+        .drop-zone .icon {
+            transition: all 0.3s ease;
+        }
+        .drop-zone.drag-over .icon {
+            transform: scale(1.1);
+        }
+        
+        /* Preview image styles */
+        .preview-img {
+            max-width: 100%;
+            height: 150px; /* Fixed height for consistency */
+            object-fit: contain; /* Scales image to fit, preserving aspect ratio */
+            border-radius: 0.25rem;
+        }
+        
+        /* Result box styles */
+        .result-box {
+            display: none; /* Hidden by default */
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            text-align: center;
+            margin-top: 1rem;
+        }
+        .result-box.healthy {
+            background-color: #22c55e; /* Green */
+            color: #ffffff;
+        }
+        .result-box.parkinson {
+            background-color: #ef4444; /* Red */
+            color: #ffffff;
+        }
+        .result-box.error {
+            background-color: #f97316; /* Orange */
+            color: #ffffff;
+        }
+        
+        /* Spinner styles */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #ef4444; /* Red spinner */
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 md:p-8">
+
+    <!-- UPDATED: Added text-gray-100 classes for visibility -->
+    <h1 class="text-3xl md:text-4xl font-bold text-center mb-2 text-gray-100">AI Parkinson's Risk Analysis</h1>
+    <p class="text-lg text-center mb-8 text-gray-300">Drop a file in one of the zones for an instant analysis.</p>
+
+    <div class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <!-- Card 1: Spiral Drawing -->
+        <div class="bg-black p-6 rounded-lg shadow-lg">
+            <h2 class="text-xl font-semibold mb-4 text-center text-gray-100">Analyze Spiral Drawing</h2>
+            <label for="drawing-upload" class="drop-zone w-full p-8 flex flex-col items-center justify-center" id="drawing-drop-zone">
+                <!-- UPDATED: Added text-gray-100 class to icon -->
+                <svg class="icon w-12 h-12 mb-3 text-gray-100" id="drawing-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                </svg>
+                <div id="drawing-spinner" class="spinner my-4 hidden"></div>
+                <!-- UPDATED: Added text-gray-300 class -->
+                <p class="text-sm text-center text-gray-300" id="drawing-text">Drop a .png or .jpg file here, or click to select</p>
+                <img src="" alt="Drawing Preview" class="preview-img hidden mt-4" id="drawing-preview" />
+            </label>
+            <input type="file" id="drawing-upload" class="hidden" accept="image/png, image/jpeg">
+            <div class="result-box" id="drawing-result"></div>
+        </div>
+
+        <!-- Card 2: Brain MRI -->
+        <div class="bg-black p-6 rounded-lg shadow-lg">
+            <h2 class="text-xl font-semibold mb-4 text-center text-gray-100">Analyze Brain MRI</h2>
+            <label for="mri-upload" class="drop-zone w-full p-8 flex flex-col items-center justify-center" id="mri-drop-zone">
+                <!-- UPDATED: Added text-gray-100 class to icon -->
+                <svg class="icon w-12 h-12 mb-3 text-gray-100" id="mri-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.624l.523.523a.75.75 0 001.127 0l4.47-4.47a.75.75 0 000-1.128l-5.17-5.17a.75.75 0 00-1.127 0l-.523.523a.75.75 0 000 1.128l3.172 3.172a.75.75 0 010 1.06l-3.172 3.172a.75.75 0 000 1.128z" />
+                </svg>
+                <div id="mri-spinner" class="spinner my-4 hidden"></div>
+                <!-- UPDATED: Added text-gray-300 class -->
+                <p class="text-sm text-center text-gray-300" id="mri-text">Drop a .png, .jpg, or .nii file here, or click to select</p>
+                <img src="" alt="MRI Preview" class="preview-img hidden mt-4" id="mri-preview" />
+            </label>
+            <input type="file" id="mri-upload" class="hidden" accept="image/png, image/jpeg, .nii, .nii.gz">
+            <div class="result-box" id="mri-result"></div>
+        </div>
+
+        <!-- Card 3: Audio File -->
+        <div class="bg-black p-6 rounded-lg shadow-lg">
+            <h2 class="text-xl font-semibold mb-4 text-center text-gray-100">Analyze Voice Recording</h2>
+            <label for="audio-upload" class="drop-zone w-full p-8 flex flex-col items-center justify-center" id="audio-drop-zone">
+                <!-- UPDATED: Added text-gray-100 class to icon -->
+                <svg class="icon w-12 h-12 mb-3 text-gray-100" id="audio-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+                </svg>
+                <div id="audio-spinner" class="spinner my-4 hidden"></div>
+                <!-- UPDATED: Added text-gray-300 class -->
+                <p class="text-sm text-center text-gray-300" id="audio-text">Drop a .wav or .mp3 file here, or click to select</p>
+                <!-- Audio files don't have a visual preview, so we show the filename -->
+                <p class="text-sm text-green-400 mt-4 hidden" id="audio-preview"></p>
+            </label>
+            <input type="file" id="audio-upload" class="hidden" accept="audio/wav, audio/mpeg">
+            <div class="result-box" id="audio-result"></div>
+        </div>
+
+    </div>
+
+    <script>
+        // Helper function to handle the entire upload and analysis process
+        async function handleFileUpload(file, type) {
+            const dropZone = document.getElementById(`${type}-drop-zone`);
+            const icon = document.getElementById(`${type}-icon`);
+            const spinner = document.getElementById(`${type}-spinner`);
+            const text = document.getElementById(`${type}-text`);
+            const preview = document.getElementById(`${type}-preview`);
+            const resultBox = document.getElementById(`${type}-result`);
+
+            // 1. Show spinner and hide other elements
+            icon?.classList.add('hidden');
+            text.classList.add('hidden');
+            if (preview) preview.classList.add('hidden');
+            spinner.classList.remove('hidden');
+            resultBox.style.display = 'none';
+
+            // 2. Create FormData and append the file
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // 3. Make the API call
+            try {
+                const response = await fetch(`http://127.0.0.1:8000/predict/${type}`, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                // 4. Display the result
+                displayResult(result, resultBox, type);
+
+            } catch (error) {
+                console.error(`Error during ${type} analysis:`, error);
+                displayResult({ prediction: 'Error', confidence: error.message }, resultBox, 'error');
+            } finally {
+                // 5. Hide spinner and show file info
+                spinner.classList.add('hidden');
+                
+                if (preview) {
+                    // For images, show the preview
+                    preview.classList.remove('hidden');
+                } else if (type === 'audio') {
+                    // For audio, show the filename
+                    text.classList.remove('hidden');
+                    text.textContent = file.name;
+                    text.classList.add('text-green-400'); // Make text green to show success
+                } else {
+                    icon.classList.remove('hidden');
+                }
+            }
+        }
+        
+        // Helper function to display the result
+        function displayResult(result, resultBox, type) {
+            let message = '';
+            let isError = type === 'error';
+            
+            if (isError) {
+                message = `Analysis Failed: ${result.confidence}`; // In error case, 'confidence' holds the error message
+                resultBox.className = 'result-box error';
+            } else {
+                const prediction = result.prediction.charAt(0).toUpperCase() + result.prediction.slice(1);
+                // Check if confidence is a valid number
+                const confidence = parseFloat(result.confidence);
+                
+                if (!isNaN(confidence)) {
+                    message = `Result: ${prediction} (Confidence: ${confidence.toFixed(2)}%)`;
+                } else {
+                    message = `Result: ${prediction}`; // Fallback if no confidence
+                }
+                
+                resultBox.className = (prediction.toLowerCase() === 'healthy') ? 'result-box healthy' : 'result-box parkinson';
+            }
+
+            resultBox.textContent = message;
+            resultBox.style.display = 'block';
+        }
+
+        // Setup drag-and-drop and file selection for all three zones
+        ['drawing', 'mri', 'audio'].forEach(type => {
+            const dropZone = document.getElementById(`${type}-drop-zone`);
+            const fileInput = document.getElementById(`${type}-upload`);
+            const preview = document.getElementById(`${type}-preview`);
+            const text = document.getElementById(`${type}-text`);
+
+            // Handle file selection via click
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    if (preview) { // For drawing and MRI
+                        preview.src = URL.createObjectURL(file);
+                        preview.classList.remove('hidden');
+                        text.classList.add('hidden');
+                    }
+                    handleFileUpload(file, type);
+                }
+            });
+
+            // Handle drag-and-drop
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault(); // Prevent default browser behavior
+                dropZone.classList.add('drag-over');
+            });
+
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                    fileInput.files = e.dataTransfer.files; // Sync file input
+                    if (preview) { // For drawing and MRI
+                        preview.src = URL.createObjectURL(file);
+                        preview.classList.remove('hidden');
+                        text.classList.add('hidden');
+                    }
+                    handleFileUpload(file, type);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
