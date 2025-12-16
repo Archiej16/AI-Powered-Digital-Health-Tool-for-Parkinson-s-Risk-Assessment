@@ -1,4 +1,5 @@
 Multimodal Parkinson's Disease Detection System
+
 A comprehensive, AI-powered diagnostic tool designed to detect early signs of Parkinson's disease using multiple non-invasive biomarkers: Voice, Visual Motor (Drawings), and Neuroimaging (MRI).
 
 📌 Project Overview
